@@ -1336,7 +1336,7 @@ async function cmpSendA(){
     const k = sref.child('x').push().key;
     await db.ref('spya/' + scode + '/' + k).set({ m: c.mt, d });
     await cmpSubmit({ k: 'a', v: k });
-  } catch(e) { if (cmp === c) { c.rs = 'done'; cmpDraw(); } toast('التسجيل ماتبعتش، جرّب تاني'); }
+  } catch(e) { console.error(e); if (cmp === c) { c.rs = 'done'; cmpDraw(); } toast('التسجيل ماتبعتش: ' + (e.code || e.message)); }
 }
 async function cmpConv(){
   const c = cmp; if (!c || !c.blob) return; c.rs = 'conv'; cmpDraw();
@@ -1364,6 +1364,7 @@ $('#smb').onclick = e => {
   else if (a === 'sendT') {
     const x = cmp.txt.trim();
     if (cmp.m === 'ask' && !cmp.tg) return toast('اختار مين تسأله');
+    if (!x && cmp.blob) return cmpSendA();
     if (!x) return toast('اكتب الأول أو سجّل صوت');
     cmpSubmit({ k: 't', v: x });
   }
@@ -1579,7 +1580,7 @@ function bootAuth(){
     try { await auth.signInWithPopup(p); }
     catch (e) {
       if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') auth.signInWithRedirect(p);
-      else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') toast('تسجيل الدخول فشل، جرّب تاني');
+      else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') toast(({ 'auth/unauthorized-domain': 'الدومين مش مضاف في Firebase (Authorized domains)', 'auth/operation-not-allowed': 'تسجيل جوجل مش مفعّل في Firebase', 'auth/network-request-failed': 'مشكلة في النت', 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'مفتاح Firebase غلط' })[e.code] || ('تسجيل الدخول فشل: ' + (e.code || e.message)));
     }
   };
   auth.onAuthStateChanged(u => { if (u) onUser(u); else { $('#login').classList.remove('hide'); $('#home').classList.remove('show'); } });
@@ -1769,7 +1770,7 @@ async function chSend(type, v, media){
   const mt = chAdm ? { last: prev, lastT: ts, uu: true, ua: false }
     : { name: me.name, photo: me.photo || '', email: userEmail, last: prev, lastT: ts, ua: true, uu: false };
   Object.entries(mt).forEach(([a, b]) => up['chatmeta/' + chT + '/' + a] = b);
-  try { await db.ref().update(up); } catch (e) { toast('الرسالة ماتبعتتش'); }
+  try { await db.ref().update(up); } catch (e) { console.error(e); toast('الرسالة ماتبعتتش: ' + (e.code || e.message)); }
 }
 $('#chSend').onclick = () => {
   const v = $('#chIn').value.trim(); if (!v) return;
